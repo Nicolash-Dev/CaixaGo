@@ -1,0 +1,5 @@
+APP_NAME = "CaixaGo"
+APP_VERSION = "0.0.1"
+
+DEFAULT_USER_NAME = "Nicolas"
+DEFAULT_USER_PIN = "1234"

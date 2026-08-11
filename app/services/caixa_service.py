@@ -21,14 +21,23 @@ class CaixaService:
 
         if valor_inicial < 0:
             raise ValueError(
-                "O valor inicial não pode ser negativo."
+            "O valor inicial não pode ser negativo."
+        )
+
+        usuario = database.obter_usuario_por_login(
+        "nicolas"
+        )
+
+        if usuario is None:
+            raise ValueError(
+                "Usuário padrão não foi encontrado."
             )
 
         return database.abrir_caixa(
-            usuario_id=1,
-            valor_inicial=valor_inicial,
-            observacao=observacao.strip(),
-        )
+        usuario_id=int(usuario["id"]),
+        valor_inicial=valor_inicial,
+        observacao=observacao.strip(),
+    )
 
     def registrar_movimentacao(
         self,
@@ -72,6 +81,21 @@ class CaixaService:
             int(caixa["id"])
         )
 
+    def obter_ultimas_movimentacoes(
+        self,
+        limite: int = 5,
+    ):
+        caixa = database.obter_caixa_aberto()
+
+        if caixa is None:
+            return []
+
+        return database.obter_ultimas_movimentacoes(
+            caixa_id=int(caixa["id"]),
+            limite=limite,
+        )
+
+    
     def obter_resumo(self) -> dict:
         caixa = database.obter_caixa_aberto()
 

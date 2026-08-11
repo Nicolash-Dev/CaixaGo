@@ -43,5 +43,13 @@ class CaixaController:
             justificativa=justificativa,
         )
 
+    def obter_ultimas_movimentacoes(
+        self,
+        limite: int = 5,
+    ):
+        return caixa_service.obter_ultimas_movimentacoes(
+            limite=limite
+    )
+
 
 caixa_controller = CaixaController()

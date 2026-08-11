@@ -75,7 +75,7 @@ class AbrirCaixaDialog(QDialog):
     def salvar(self) -> None:
         try:
             caixa_controller.abrir_caixa(
-                valor_inicial=self.valor_input.value(),
+                valor=self.valor_input.value(),
                 observacao=self.observacao_input.text(),
             )
 
@@ -88,9 +88,9 @@ class AbrirCaixaDialog(QDialog):
                 str(error),
             )
 
-        except Exception:
+        except Exception as error:
             QMessageBox.critical(
                 self,
                 "Não foi possível abrir o caixa",
-                "Ocorreu um problema inesperado.",
-            )
+                f"Ocorreu um problema inesperado:\n{error}",
+    )

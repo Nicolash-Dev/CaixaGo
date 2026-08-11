@@ -96,6 +96,49 @@ class Database:
                 """
             ).fetchone()
 
+    def obter_ultimas_movimentacoes(
+        self,
+        caixa_id: int,
+        limite: int = 5,
+    ):
+        with self.connect() as connection:
+            return connection.execute(
+             """
+                SELECT
+                    id,
+                    caixa_id,
+                    tipo,
+                    valor,
+                    descricao,
+                    criado_em
+                FROM movimentacoes
+                WHERE caixa_id = ?
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (
+                    caixa_id,
+                    limite,
+                ),
+            ).fetchall()
+            return movimentacoes
+        
+    def obter_usuario_por_login(
+    self,
+    usuario: str,
+    ) -> sqlite3.Row | None:
+        with self.connect() as connection:
+            return connection.execute(
+            """
+            SELECT *
+            FROM usuarios
+            WHERE usuario = ?
+              AND ativo = 1
+            LIMIT 1
+            """,
+            (usuario,),
+        ).fetchone()
+
     def abrir_caixa(
         self,
         usuario_id: int,
@@ -220,53 +263,47 @@ class Database:
         diferenca: float,
         observacao: str,
     ) -> None:
-        with self.connect() as connection:
-            connection.execute(
-                """
-                UPDATE caixas
-                SET
-                    status = 'FECHADO',
-                    fechado_em = CURRENT_TIMESTAMP,
-                    observacao = CASE
-                        WHEN ? = '' THEN observacao
-                        ELSE ?
-                    END
-                WHERE id = ?
-                """,
-                (
-                    observacao.strip(),
-                    observacao.strip(),
-                    caixa_id,
-                ),
+     with self.connect() as connection:
+        connection.execute(
+            """
+            UPDATE caixas
+            SET
+                status = 'FECHADO',
+                fechado_em = CURRENT_TIMESTAMP,
+                observacao = CASE
+                    WHEN ? = '' THEN observacao
+                    ELSE ?
+                END
+            WHERE id = ?
+            """,
+            (
+                observacao.strip(),
+                observacao.strip(),
+                caixa_id,
+            ),
+        )
+
+        connection.execute(
+            """
+            INSERT INTO configuracoes (
+                chave,
+                valor,
+                atualizado_em
             )
-
-            connection.execute(
-                """
-                INSERT INTO configuracoes (
-                    chave,
-                    valor,
-                    atualizado_em
-                )
-                VALUES (?, ?, CURRENT_TIMESTAMP)
-                ON CONFLICT(chave)
-                DO UPDATE SET
-                    valor = excluded.valor,
-                    atualizado_em = CURRENT_TIMESTAMP
-                """,
+            VALUES (?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(chave)
+            DO UPDATE SET
+                valor = excluded.valor,
+                atualizado_em = CURRENT_TIMESTAMP
+            """,
+            (
+                f"fechamento_{caixa_id}",
                 (
-                    f"fechamento_{caixa_id}",
-                    (
-                        f"valor_contado={valor_contado};"
-                        f"diferenca={diferenca};"
-                        f"observacao={observacao.strip()}"
-                    ),
+                    f"valor_contado={valor_contado};"
+                    f"diferenca={diferenca};"
+                    f"observacao={observacao.strip()}"
                 ),
-            )
-
-            
-            connection.execute(
-    ...
-)
-
+            ),
+        )
 
 database = Database()

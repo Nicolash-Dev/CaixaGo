@@ -20,11 +20,13 @@ class CaixaController:
         tipo: str,
         valor: float,
         descricao: str = "",
+        forma_pagamento: str | None = None,
     ):
         return caixa_service.registrar_movimentacao(
             tipo=tipo,
             valor=valor,
             descricao=descricao,
+            forma_pagamento=forma_pagamento,
         )
 
     def listar_movimentacoes(self):

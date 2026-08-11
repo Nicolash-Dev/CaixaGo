@@ -84,6 +84,23 @@ class Database:
                 ("Nicolas", "nicolas", "1234"),
             )
 
+            colunas = connection.execute(
+                "PRAGMA table_info(movimentacoes)"
+            ).fetchall()
+
+            nomes_colunas = {
+                coluna["name"]
+                for coluna in colunas
+            }
+
+            if "forma_pagamento" not in nomes_colunas:
+                connection.execute(
+                    """
+                    ALTER TABLE movimentacoes
+                    ADD COLUMN forma_pagamento TEXT
+                    """
+                )
+
     def obter_caixa_aberto(self) -> sqlite3.Row | None:
         with self.connect() as connection:
             return connection.execute(
@@ -164,6 +181,7 @@ class Database:
         tipo: str,
         valor: float,
         descricao: str = "",
+        forma_pagamento: str | None = None,
     ) -> int:
         with self.connect() as connection:
             cursor = connection.execute(
@@ -172,19 +190,25 @@ class Database:
                     caixa_id,
                     tipo,
                     valor,
-                    descricao
+                    descricao,
+                    forma_pagamento
                 )
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?)
                 """,
                 (
                     caixa_id,
                     tipo.upper(),
                     valor,
                     descricao.strip(),
+                    (
+                        forma_pagamento.upper()
+                        if forma_pagamento
+                        else None
+                    ),
                 ),
             )
 
-            return int(cursor.lastrowid)
+        return int(cursor.lastrowid)
 
 
     def listar_movimentacoes(self, caixa_id: int):
@@ -200,7 +224,10 @@ class Database:
             ).fetchall()
 
 
-    def calcular_resumo_caixa(self, caixa_id: int) -> dict:
+    def calcular_resumo_caixa(
+        self,
+        caixa_id: int,
+        ) -> dict:
         with self.connect() as connection:
             caixa = connection.execute(
                 """
@@ -212,24 +239,37 @@ class Database:
             ).fetchone()
 
             if caixa is None:
-                raise ValueError("Caixa não encontrado.")
+                raise ValueError(
+                    "Caixa não encontrado."
+                )
 
             resumo = connection.execute(
                 """
                 SELECT
                     COUNT(*) AS quantidade,
+
                     COALESCE(
                         SUM(
                             CASE
-                                WHEN tipo IN ('VENDA', 'SUPRIMENTO')
+                                WHEN tipo = 'VENDA'
+                                    AND (
+                                        forma_pagamento = 'DINHEIRO'
+                                        OR forma_pagamento IS NULL
+                                    )
                                     THEN valor
+
+                                WHEN tipo = 'SUPRIMENTO'
+                                    THEN valor
+
                                 WHEN tipo = 'SANGRIA'
                                     THEN -valor
+
                                 ELSE 0
                             END
                         ),
                         0
                     ) AS saldo_movimentacoes,
+
                     COALESCE(
                         SUM(
                             CASE
@@ -239,22 +279,102 @@ class Database:
                             END
                         ),
                         0
-                    ) AS faturamento
+                    ) AS faturamento,
+
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN tipo = 'VENDA'
+                                    AND (
+                                        forma_pagamento = 'DINHEIRO'
+                                        OR forma_pagamento IS NULL
+                                    )
+                                    THEN valor
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    ) AS vendas_dinheiro,
+
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN tipo = 'VENDA'
+                                    AND forma_pagamento = 'PIX'
+                                    THEN valor
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    ) AS vendas_pix,
+
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN tipo = 'VENDA'
+                                    AND forma_pagamento = 'DEBITO'
+                                    THEN valor
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    ) AS vendas_debito,
+
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN tipo = 'VENDA'
+                                    AND forma_pagamento = 'CREDITO'
+                                    THEN valor
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    ) AS vendas_credito
+
                 FROM movimentacoes
                 WHERE caixa_id = ?
                 """,
                 (caixa_id,),
             ).fetchone()
 
-            valor_inicial = float(caixa["valor_inicial"])
-            saldo_movimentacoes = float(resumo["saldo_movimentacoes"])
+            valor_inicial = float(
+                caixa["valor_inicial"]
+            )
+
+            saldo_movimentacoes = float(
+                resumo["saldo_movimentacoes"]
+            )
 
             return {
-                "quantidade": int(resumo["quantidade"]),
-                "faturamento": float(resumo["faturamento"]),
-                "saldo_esperado": valor_inicial + saldo_movimentacoes,
-            }
+                "quantidade": int(
+                    resumo["quantidade"]
+                ),
 
+                "faturamento": float(
+                    resumo["faturamento"]
+                ),
+
+                "saldo_esperado":
+                    valor_inicial
+                    + saldo_movimentacoes,
+
+                "vendas_dinheiro": float(
+                    resumo["vendas_dinheiro"]
+                ),
+
+                "vendas_pix": float(
+                    resumo["vendas_pix"]
+                ),
+
+                "vendas_debito": float(
+                    resumo["vendas_debito"]
+                ),
+
+                "vendas_credito": float(
+                    resumo["vendas_credito"]
+                ),
+            }
 
     def fechar_caixa(
         self,

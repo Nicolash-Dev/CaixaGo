@@ -44,6 +44,7 @@ class CaixaService:
         tipo: str,
         valor: float,
         descricao: str = "",
+        forma_pagamento: str | None = None,
     ) -> int:
         caixa = database.obter_caixa_aberto()
 
@@ -64,11 +65,38 @@ class CaixaService:
                 "O valor deve ser maior que zero."
             )
 
+        forma_normalizada = None
+
+        if tipo_normalizado == "VENDA":
+            if not forma_pagamento:
+                raise ValueError(
+                    "Informe a forma de pagamento da venda."
+                )
+
+            forma_normalizada = (
+                forma_pagamento
+                .strip()
+                .upper()
+            )
+
+            formas_permitidas = {
+                "DINHEIRO",
+                "PIX",
+                "DEBITO",
+                "CREDITO",
+            }
+
+            if forma_normalizada not in formas_permitidas:
+                raise ValueError(
+                    "Forma de pagamento inválida."
+                )
+
         return database.registrar_movimentacao(
             caixa_id=int(caixa["id"]),
             tipo=tipo_normalizado,
             valor=valor,
             descricao=descricao,
+            forma_pagamento=forma_normalizada,
         )
 
     def listar_movimentacoes(self):

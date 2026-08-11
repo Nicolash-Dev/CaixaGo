@@ -160,7 +160,7 @@ class HomePage(QWidget):
             "faturamento.svg",
             "Faturamento",
             "R$ 0,00",
-            "Vendas em dinheiro",
+            "Total de vendas",
         )
 
         self.dinheiro_card = MetricCard(

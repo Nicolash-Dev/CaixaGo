@@ -1,4 +1,5 @@
 from app.database.database import database
+from app.services.session_service import session_service
 
 
 class CaixaService:
@@ -26,13 +27,11 @@ class CaixaService:
                 "O valor inicial não pode ser negativo."
             )
 
-        usuario = database.obter_usuario_por_login(
-            "nicolas"
-        )
+        usuario = session_service.obter_usuario_atual()
 
         if usuario is None:
             raise ValueError(
-                "Usuário padrão não foi encontrado."
+                "Nenhum usuário está autenticado."
             )
 
         return database.abrir_caixa(
@@ -288,5 +287,55 @@ class CaixaService:
             "1" if enviar_relatorio else "0",
         )
 
+
+    def autenticar_usuario(
+        self,
+        usuario: str,
+        pin: str,
+    ) -> dict:
+        usuario = usuario.strip().lower()
+        pin = pin.strip()
+
+        if not usuario:
+            raise ValueError(
+                "Informe o usuário."
+            )
+
+        if not pin:
+            raise ValueError(
+                "Informe o PIN."
+            )
+
+        registro = database.obter_usuario_por_login(
+            usuario
+        )
+
+        if registro is None:
+            raise ValueError(
+                "Usuário não encontrado ou inativo."
+            )
+
+        if str(registro["pin_hash"]) != pin:
+            raise ValueError(
+                "PIN incorreto."
+            )
+
+        session_service.iniciar_sessao(
+            registro
+        )
+
+        return session_service.obter_usuario_atual()
+
+
+    def obter_usuario_logado(
+        self,
+    ) -> dict | None:
+        return session_service.obter_usuario_atual()
+
+
+    def logout(
+        self,
+    ) -> None:
+        session_service.encerrar_sessao()
 
 caixa_service = CaixaService()

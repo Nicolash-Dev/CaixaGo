@@ -91,5 +91,29 @@ class CaixaController:
             email_relatorios=email_relatorios,
             enviar_relatorio=enviar_relatorio,
         )
+
+    def autenticar_usuario(
+        self,
+        usuario: str,
+        pin: str,
+    ) -> dict:
+        return caixa_service.autenticar_usuario(
+            usuario=usuario,
+            pin=pin,
+        )
+
+
+    def obter_usuario_logado(
+        self,
+    ) -> dict | None:
+        return caixa_service.obter_usuario_logado()
+
+
+    def logout(
+        self,
+    ) -> None:
+        caixa_service.logout()
+
+
     
 caixa_controller = CaixaController()

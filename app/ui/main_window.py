@@ -5,6 +5,7 @@ from app.ui.detalhes_caixa_page import DetalhesCaixaPage
 from app.ui.historico_caixas_page import HistoricoCaixasPage
 from app.ui.home_page import HomePage
 from app.ui.login_page import LoginPage
+from app.controllers.caixa_controller import caixa_controller
 
 
 class MainWindow(QMainWindow):
@@ -23,7 +24,7 @@ class MainWindow(QMainWindow):
         )
 
         self.home_page = HomePage(
-            on_logout=self.show_login,
+            on_logout=self.fazer_logout,
             on_historico=self.show_historico,
             on_configuracoes=self.show_configuracoes,
         )
@@ -64,11 +65,20 @@ class MainWindow(QMainWindow):
         self.show_login()
 
     def show_login(self) -> None:
+        self.login_page.reset_pin()
+
         self.stack.setCurrentWidget(
             self.login_page
         )
 
+    def fazer_logout(self) -> None:
+        caixa_controller.logout()
+
         self.login_page.reset_pin()
+
+        self.stack.setCurrentWidget(
+            self.login_page
+        )    
 
     def show_home(self) -> None:
         self.home_page.atualizar_home()

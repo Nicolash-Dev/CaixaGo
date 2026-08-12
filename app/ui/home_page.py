@@ -113,9 +113,11 @@ class HomePage(QWidget):
         self,
         on_logout,
         on_historico,
+        on_configuracoes,
     ) -> None:
         super().__init__()
 
+        self.on_configuracoes = on_configuracoes
         self.on_logout = on_logout
         self.on_historico = on_historico
         self.caixa_aberto_em: datetime | None = None
@@ -124,28 +126,56 @@ class HomePage(QWidget):
         root.setContentsMargins(42, 34, 42, 28)
         root.setSpacing(22)
 
-        # Cabeçalho
+         # Cabeçalho
         header = QHBoxLayout()
 
         brand = QLabel("C✓  CaixaGo")
         brand.setObjectName("headerBrand")
 
-        historico_button = QPushButton("Histórico")
-        historico_button.setObjectName("ghostButton")
+        configuracoes_button = QPushButton(
+            "Configurações"
+        )
+        configuracoes_button.setObjectName(
+            "ghostButton"
+        )
+        configuracoes_button.clicked.connect(
+            self.on_configuracoes
+        )
+
+        historico_button = QPushButton(
+            "Histórico"
+        )
+        historico_button.setObjectName(
+            "ghostButton"
+        )
         historico_button.clicked.connect(
             self.on_historico
         )
 
-        logout_button = QPushButton("Sair")
-        logout_button.setObjectName("ghostButton")
+        logout_button = QPushButton(
+            "Sair"
+        )
+        logout_button.setObjectName(
+            "ghostButton"
+        )
         logout_button.clicked.connect(
             self.on_logout
         )
 
         header.addWidget(brand)
         header.addStretch()
-        header.addWidget(historico_button)
-        header.addWidget(logout_button)
+
+        header.addWidget(
+            configuracoes_button
+        )
+
+        header.addWidget(
+            historico_button
+        )
+
+        header.addWidget(
+            logout_button
+        )
 
         # Saudação e horário
         greeting = QLabel("Bom dia, Nicolas")

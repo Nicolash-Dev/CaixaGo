@@ -69,5 +69,27 @@ class CaixaController:
             caixa_id
         )
 
+    def obter_configuracoes_estabelecimento(
+        self,
+    ) -> dict:
+        return (
+            caixa_service
+            .obter_configuracoes_estabelecimento()
+        )
 
+
+    def salvar_configuracoes_estabelecimento(
+        self,
+        nome: str,
+        responsavel: str,
+        email_relatorios: str,
+        enviar_relatorio: bool,
+    ) -> None:
+        caixa_service.salvar_configuracoes_estabelecimento(
+            nome=nome,
+            responsavel=responsavel,
+            email_relatorios=email_relatorios,
+            enviar_relatorio=enviar_relatorio,
+        )
+    
 caixa_controller = CaixaController()

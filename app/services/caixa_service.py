@@ -225,6 +225,68 @@ class CaixaService:
             )
 
         return detalhes
+    
+    def obter_configuracoes_estabelecimento(
+        self,
+    ) -> dict:
+        return {
+            "nome": database.obter_configuracao(
+                "estabelecimento_nome",
+                "Meu Estabelecimento",
+            ),
+            "responsavel": database.obter_configuracao(
+                "responsavel_nome",
+                "",
+            ),
+            "email_relatorios": database.obter_configuracao(
+                "email_relatorios",
+                "",
+            ),
+            "enviar_relatorio": (
+                database.obter_configuracao(
+                    "enviar_relatorio_automaticamente",
+                    "0",
+                )
+                == "1"
+            ),
+        }
+
+
+    def salvar_configuracoes_estabelecimento(
+        self,
+        nome: str,
+        responsavel: str,
+        email_relatorios: str,
+        enviar_relatorio: bool,
+    ) -> None:
+        nome = nome.strip()
+        responsavel = responsavel.strip()
+        email_relatorios = email_relatorios.strip()
+
+        if not nome:
+            raise ValueError(
+                "Informe o nome do estabelecimento."
+            )
+
+        database.salvar_configuracao(
+            "estabelecimento_nome",
+            nome,
+        )
+
+        database.salvar_configuracao(
+            "responsavel_nome",
+            responsavel,
+        )
+
+        database.salvar_configuracao(
+            "email_relatorios",
+            email_relatorios,
+        )
+
+        database.salvar_configuracao(
+            "enviar_relatorio_automaticamente",
+            "1" if enviar_relatorio else "0",
+        )
 
 
 caixa_service = CaixaService()

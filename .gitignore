@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.venv/
+venv/
+
+.vscode/
+.idea/
+
+# Credenciais e variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Banco de dados local
+data/*.db
+
+# Relatórios gerados
+relatorios/*.pdf

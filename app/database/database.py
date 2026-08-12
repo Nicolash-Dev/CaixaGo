@@ -737,5 +737,105 @@ class Database:
             "resumo": resumo,
         }
 
+        def salvar_configuracao(
+            self,
+            chave: str,
+            valor: str,
+        ) -> None:
+            with self.connect() as connection:
+                connection.execute(
+                    """
+                INSERT INTO configuracoes (
+                    chave,
+                    valor,
+                    atualizado_em
+                )
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+
+                ON CONFLICT(chave)
+                DO UPDATE SET
+                    valor = excluded.valor,
+                    atualizado_em = CURRENT_TIMESTAMP
+                """,
+                (
+                    chave,
+                    valor,
+                ),
+            )
+
+
+    def obter_configuracao(
+        self,
+        chave: str,
+        padrao: str = "",
+    ) -> str:
+        with self.connect() as connection:
+            resultado = connection.execute(
+                """
+                SELECT valor
+                FROM configuracoes
+                WHERE chave = ?
+                LIMIT 1
+                """,
+                (chave,),
+            ).fetchone()
+
+            if resultado is None:
+                return padrao
+
+            return str(
+                resultado["valor"]
+                or padrao
+            )
+
+    def salvar_configuracao(
+            self,
+            chave: str,
+            valor: str,
+        ) -> None:
+            with self.connect() as connection:
+                connection.execute(
+                    """
+                    INSERT INTO configuracoes (
+                        chave,
+                        valor,
+                        atualizado_em
+                    )
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+
+                    ON CONFLICT(chave)
+                    DO UPDATE SET
+                        valor = excluded.valor,
+                        atualizado_em = CURRENT_TIMESTAMP
+                    """,
+                    (
+                        chave,
+                        valor,
+                    ),
+                )
+
+    def obter_configuracao(
+        self,
+        chave: str,
+        padrao: str = "",
+    ) -> str:
+        with self.connect() as connection:
+            resultado = connection.execute(
+                """
+                SELECT valor
+                FROM configuracoes
+                WHERE chave = ?
+                LIMIT 1
+                """,
+                (chave,),
+            ).fetchone()
+
+            if resultado is None:
+                return padrao
+
+            return str(
+                resultado["valor"]
+                or padrao
+            )
 
 database = Database()

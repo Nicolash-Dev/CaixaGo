@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 
 from app.controllers.caixa_controller import caixa_controller
 from app.reports.fechamento_pdf import gerar_pdf_fechamento
+from app.services.email_service import email_service
 
 
 def formatar_moeda(valor: float) -> str:
@@ -586,6 +587,8 @@ class FecharCaixaDialog(QDialog):
 
             caminho_pdf = None
             erro_pdf = None
+            email_enviado = False
+            erro_email = None
 
             try:
                 detalhes = (
@@ -601,6 +604,56 @@ class FecharCaixaDialog(QDialog):
 
             except Exception as error:
                 erro_pdf = str(error)
+
+            if caminho_pdf is not None:
+                try:
+                    configuracoes = (
+                        caixa_controller
+                        .obter_configuracoes_estabelecimento()
+                    )
+
+                    enviar_automaticamente = bool(
+                        configuracoes.get(
+                            "enviar_relatorio",
+                            False,
+                        )
+                    )
+
+                    if enviar_automaticamente:
+                        destinatario = str(
+                            configuracoes.get(
+                                "email_relatorios",
+                                "",
+                            )
+                        ).strip()
+
+                        estabelecimento = str(
+                            configuracoes.get(
+                                "nome",
+                                "CaixaGo",
+                            )
+                        ).strip()
+
+                        if not destinatario:
+                            raise ValueError(
+                                "O envio automático está ativado, "
+                                "mas nenhum e-mail para relatórios "
+                                "foi configurado."
+                            )
+
+                        email_service.enviar_relatorio_fechamento(
+                            destinatario=destinatario,
+                            arquivo_pdf=caminho_pdf,
+                            caixa_id=self.caixa_id,
+                            estabelecimento=estabelecimento,
+                            faturamento=self.faturamento,
+                            diferenca=diferenca_resultado,
+                        )
+
+                        email_enviado = True
+
+                except Exception as error:
+                    erro_email = str(error)
 
             mensagem = (
                 "Caixa fechado com sucesso.\n\n"
@@ -633,6 +686,19 @@ class FecharCaixaDialog(QDialog):
                     "\n\nO caixa foi fechado normalmente,"
                     "\nmas não foi possível gerar o PDF."
                     f"\n\nDetalhes: {erro_pdf}"
+                )
+
+            if email_enviado:
+                mensagem += (
+                    "\n\nRelatório enviado por e-mail "
+                    "com sucesso."
+                )
+
+            elif erro_email:
+                mensagem += (
+                    "\n\nO caixa e o PDF foram salvos normalmente,"
+                    "\nmas não foi possível enviar o e-mail."
+                    f"\n\nDetalhes: {erro_email}"
                 )
 
             QMessageBox.information(

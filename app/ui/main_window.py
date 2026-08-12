@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QMainWindow, QStackedWidget
 
+from app.ui.configuracoes_page import ConfiguracoesPage
 from app.ui.detalhes_caixa_page import DetalhesCaixaPage
 from app.ui.historico_caixas_page import HistoricoCaixasPage
 from app.ui.home_page import HomePage
@@ -24,6 +25,7 @@ class MainWindow(QMainWindow):
         self.home_page = HomePage(
             on_logout=self.show_login,
             on_historico=self.show_historico,
+            on_configuracoes=self.show_configuracoes,
         )
 
         self.historico_page = HistoricoCaixasPage(
@@ -33,6 +35,10 @@ class MainWindow(QMainWindow):
 
         self.detalhes_caixa_page = DetalhesCaixaPage(
             on_voltar=self.show_historico
+        )
+
+        self.configuracoes_page = ConfiguracoesPage(
+            on_voltar=self.show_home
         )
 
         self.stack.addWidget(
@@ -49,6 +55,10 @@ class MainWindow(QMainWindow):
 
         self.stack.addWidget(
             self.detalhes_caixa_page
+        )
+
+        self.stack.addWidget(
+            self.configuracoes_page
         )
 
         self.show_login()
@@ -84,4 +94,11 @@ class MainWindow(QMainWindow):
 
         self.stack.setCurrentWidget(
             self.detalhes_caixa_page
+        )
+
+    def show_configuracoes(self) -> None:
+        self.configuracoes_page.carregar_configuracoes()
+
+        self.stack.setCurrentWidget(
+            self.configuracoes_page
         )

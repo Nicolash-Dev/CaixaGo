@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.controllers.caixa_controller import caixa_controller
+from app.reports.fechamento_pdf import gerar_pdf_fechamento
 
 
 def formatar_moeda(valor: float) -> str:
@@ -54,6 +55,8 @@ class FecharCaixaDialog(QDialog):
             raise ValueError(
                 "Não existe um caixa aberto."
             )
+
+        self.caixa_id = int(caixa["id"])
 
         self.resumo = caixa_controller.obter_resumo()
 
@@ -581,28 +584,61 @@ class FecharCaixaDialog(QDialog):
             if abs(diferenca_resultado) < 0.005:
                 diferenca_resultado = 0.0
 
+            caminho_pdf = None
+            erro_pdf = None
+
+            try:
+                detalhes = (
+                    caixa_controller
+                    .obter_detalhes_caixa(
+                        self.caixa_id
+                    )
+                )
+
+                caminho_pdf = gerar_pdf_fechamento(
+                    detalhes
+                )
+
+            except Exception as error:
+                erro_pdf = str(error)
+
+            mensagem = (
+                "Caixa fechado com sucesso.\n\n"
+                f"Faturamento total: "
+                f"{formatar_moeda(self.faturamento)}\n"
+                f"Dinheiro: "
+                f"{formatar_moeda(self.vendas_dinheiro)}\n"
+                f"PIX: "
+                f"{formatar_moeda(self.vendas_pix)}\n"
+                f"Débito: "
+                f"{formatar_moeda(self.vendas_debito)}\n"
+                f"Crédito: "
+                f"{formatar_moeda(self.vendas_credito)}\n\n"
+                f"Saldo esperado: "
+                f"{formatar_moeda(resultado['esperado'])}\n"
+                f"Valor contado: "
+                f"{formatar_moeda(resultado['contado'])}\n"
+                f"Diferença: "
+                f"{formatar_moeda(diferenca_resultado)}"
+            )
+
+            if caminho_pdf is not None:
+                mensagem += (
+                    "\n\nRelatório PDF gerado automaticamente."
+                    f"\n\nArquivo:\n{caminho_pdf}"
+                )
+
+            elif erro_pdf:
+                mensagem += (
+                    "\n\nO caixa foi fechado normalmente,"
+                    "\nmas não foi possível gerar o PDF."
+                    f"\n\nDetalhes: {erro_pdf}"
+                )
+
             QMessageBox.information(
                 self,
                 "Caixa encerrado",
-                (
-                    "Caixa fechado com sucesso.\n\n"
-                    f"Faturamento total: "
-                    f"{formatar_moeda(self.faturamento)}\n"
-                    f"Dinheiro: "
-                    f"{formatar_moeda(self.vendas_dinheiro)}\n"
-                    f"PIX: "
-                    f"{formatar_moeda(self.vendas_pix)}\n"
-                    f"Débito: "
-                    f"{formatar_moeda(self.vendas_debito)}\n"
-                    f"Crédito: "
-                    f"{formatar_moeda(self.vendas_credito)}\n\n"
-                    f"Saldo esperado: "
-                    f"{formatar_moeda(resultado['esperado'])}\n"
-                    f"Valor contado: "
-                    f"{formatar_moeda(resultado['contado'])}\n"
-                    f"Diferença: "
-                    f"{formatar_moeda(diferenca_resultado)}"
-                ),
+                mensagem,
             )
 
             self.accept()

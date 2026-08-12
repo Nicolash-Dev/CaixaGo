@@ -114,12 +114,14 @@ class HomePage(QWidget):
         on_logout,
         on_historico,
         on_configuracoes,
+        on_usuarios,
     ) -> None:
         super().__init__()
 
-        self.on_configuracoes = on_configuracoes
         self.on_logout = on_logout
         self.on_historico = on_historico
+        self.on_configuracoes = on_configuracoes
+        self.on_usuarios = on_usuarios
         self.caixa_aberto_em: datetime | None = None
 
         root = QVBoxLayout(self)
@@ -132,13 +134,13 @@ class HomePage(QWidget):
         brand = QLabel("C✓  CaixaGo")
         brand.setObjectName("headerBrand")
 
-        configuracoes_button = QPushButton(
+        self.configuracoes_button = QPushButton(
             "Configurações"
         )
-        configuracoes_button.setObjectName(
+        self.configuracoes_button.setObjectName(
             "ghostButton"
         )
-        configuracoes_button.clicked.connect(
+        self.configuracoes_button.clicked.connect(
             self.on_configuracoes
         )
 
@@ -161,12 +163,27 @@ class HomePage(QWidget):
         logout_button.clicked.connect(
             self.on_logout
         )
+        self.usuarios_button = QPushButton(
+            "Usuários"
+        )
+
+        self.usuarios_button.setObjectName(
+            "ghostButton"
+        )
+
+        self.usuarios_button.clicked.connect(
+            self.on_usuarios
+        )
 
         header.addWidget(brand)
         header.addStretch()
 
         header.addWidget(
-            configuracoes_button
+            self.usuarios_button
+        )
+
+        header.addWidget(
+            self.configuracoes_button
         )
 
         header.addWidget(
@@ -178,8 +195,8 @@ class HomePage(QWidget):
         )
 
         # Saudação e horário
-        greeting = QLabel("Bom dia, Nicolas")
-        greeting.setObjectName("pageTitle")
+        self.greeting = QLabel("Olá")
+        self.greeting.setObjectName("pageTitle")
 
         date_label = QLabel(
             QDate.currentDate().toString("dd/MM/yyyy")
@@ -293,7 +310,7 @@ class HomePage(QWidget):
 
         # Montagem da tela
         root.addLayout(header)
-        root.addWidget(greeting)
+        root.addWidget(self.greeting)
         root.addWidget(date_label)
         root.addWidget(self.clock_label)
         root.addWidget(self.duration_label)
@@ -396,13 +413,64 @@ class HomePage(QWidget):
         )
 
     def atualizar_home(self) -> None:
+        usuario = caixa_controller.obter_usuario_logado()
+
+        if usuario is not None:
+            perfil = str(
+                usuario.get(
+                    "perfil",
+                    ""
+                )
+            ).upper()
+
+            eh_gerente = (
+                perfil == "GERENTE"
+            )
+
+            self.usuarios_button.setVisible(
+                eh_gerente
+            )
+
+            self.configuracoes_button.setVisible(
+                eh_gerente
+            )
+
+            nome = str(
+                usuario.get(
+                    "nome",
+                    "Usuário"
+                )
+            )
+
+            hora = datetime.now().hour
+
+            if hora < 12:
+                saudacao = "Bom dia"
+            elif hora < 18:
+                saudacao = "Boa tarde"
+            else:
+                saudacao = "Boa noite"
+
+            self.greeting.setText(
+                f"{saudacao}, {nome}"
+            )
+
+        else:
+            self.usuarios_button.hide()
+            self.configuracoes_button.hide()
+            self.greeting.setText(
+                "Olá"
+            )
+
         caixa = caixa_controller.obter_caixa_aberto()
 
         if caixa is None:
             self.configurar_home_caixa_fechado()
             return
 
-        self.configurar_home_caixa_aberto(caixa)
+        self.configurar_home_caixa_aberto(
+            caixa
+        )
 
     def configurar_home_caixa_fechado(self) -> None:
         self.caixa_aberto_em = None

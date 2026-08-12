@@ -54,6 +54,7 @@ class Database:
                     nome TEXT NOT NULL,
                     usuario TEXT NOT NULL UNIQUE,
                     pin_hash TEXT NOT NULL,
+                    perfil TEXT NOT NULL DEFAULT 'OPERADOR',
                     ativo INTEGER NOT NULL DEFAULT 1,
                     criado_em TEXT NOT NULL
                         DEFAULT CURRENT_TIMESTAMP
@@ -96,24 +97,36 @@ class Database:
                 """
             )
 
-            connection.execute(
+            # ==========================================
+            # Migração da tabela usuarios
+            # ==========================================
+            colunas_usuarios = connection.execute(
                 """
-                INSERT OR IGNORE INTO usuarios (
-                    nome,
-                    usuario,
-                    pin_hash
+                PRAGMA table_info(
+                    usuarios
                 )
-                VALUES (?, ?, ?)
-                """,
-                (
-                    "Nicolas",
-                    "nicolas",
-                    "1234",
-                ),
-            )
+                """
+            ).fetchall()
 
-            # Migração para bancos antigos
-            colunas = connection.execute(
+            nomes_colunas_usuarios = {
+                coluna["name"]
+                for coluna in colunas_usuarios
+            }
+
+            if "perfil" not in nomes_colunas_usuarios:
+                connection.execute(
+                    """
+                    ALTER TABLE usuarios
+                    ADD COLUMN perfil TEXT
+                    NOT NULL
+                    DEFAULT 'OPERADOR'
+                    """
+                )
+
+            # ==========================================
+            # Migração da tabela movimentacoes
+            # ==========================================
+            colunas_movimentacoes = connection.execute(
                 """
                 PRAGMA table_info(
                     movimentacoes
@@ -121,22 +134,53 @@ class Database:
                 """
             ).fetchall()
 
-            nomes_colunas = {
+            nomes_colunas_movimentacoes = {
                 coluna["name"]
-                for coluna in colunas
+                for coluna in colunas_movimentacoes
             }
 
             if (
                 "forma_pagamento"
-                not in nomes_colunas
+                not in nomes_colunas_movimentacoes
             ):
                 connection.execute(
                     """
                     ALTER TABLE movimentacoes
-                    ADD COLUMN
-                    forma_pagamento TEXT
+                    ADD COLUMN forma_pagamento TEXT
                     """
                 )
+
+            # ==========================================
+            # Usuário inicial
+            # ==========================================
+            connection.execute(
+                """
+                INSERT OR IGNORE INTO usuarios (
+                    nome,
+                    usuario,
+                    pin_hash,
+                    perfil
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    "Nicolas",
+                    "nicolas",
+                    "1234",
+                    "GERENTE",
+                ),
+            )
+
+            # Garante que Nicolas seja gerente
+            # também em bancos antigos.
+            connection.execute(
+                """
+                UPDATE usuarios
+                SET perfil = 'GERENTE'
+                WHERE usuario = ?
+                """,
+                ("nicolas",),
+            )
 
     def obter_caixa_aberto(
         self,
@@ -168,6 +212,140 @@ class Database:
                 (usuario,),
             ).fetchone()
 
+    def listar_usuarios(
+        self,
+    ) -> list:
+        with self.connect() as connection:
+            return connection.execute(
+                """
+                SELECT
+                    id,
+                    nome,
+                    usuario,
+                    perfil,
+                    ativo,
+                    criado_em
+                FROM usuarios
+                ORDER BY nome ASC
+                """
+            ).fetchall()
+
+
+    def obter_usuario_por_id(
+        self,
+        usuario_id: int,
+    ):
+        with self.connect() as connection:
+            return connection.execute(
+                """
+                SELECT
+                    id,
+                    nome,
+                    usuario,
+                    perfil,
+                    ativo,
+                    criado_em
+                FROM usuarios
+                WHERE id = ?
+                LIMIT 1
+                """,
+                (usuario_id,),
+            ).fetchone()
+
+
+    def criar_usuario(
+        self,
+        nome: str,
+        usuario: str,
+        pin_hash: str,
+        perfil: str = "OPERADOR",
+    ) -> int:
+        with self.connect() as connection:
+            cursor = connection.execute(
+                """
+                INSERT INTO usuarios (
+                    nome,
+                    usuario,
+                    pin_hash,
+                    perfil,
+                    ativo
+                )
+                VALUES (?, ?, ?, ?, 1)
+                """,
+                (
+                    nome,
+                    usuario,
+                    pin_hash,
+                    perfil,
+                ),
+            )
+
+            return int(cursor.lastrowid)
+
+
+    def atualizar_usuario(
+        self,
+        usuario_id: int,
+        nome: str,
+        usuario: str,
+        perfil: str,
+    ) -> None:
+        with self.connect() as connection:
+            connection.execute(
+                """
+                UPDATE usuarios
+                SET
+                    nome = ?,
+                    usuario = ?,
+                    perfil = ?
+                WHERE id = ?
+                """,
+                (
+                    nome,
+                    usuario,
+                    perfil,
+                    usuario_id,
+                ),
+            )
+
+
+    def atualizar_pin_usuario(
+        self,
+        usuario_id: int,
+        pin_hash: str,
+    ) -> None:
+        with self.connect() as connection:
+            connection.execute(
+                """
+                UPDATE usuarios
+                SET pin_hash = ?
+                WHERE id = ?
+                """,
+                (
+                    pin_hash,
+                    usuario_id,
+                ),
+            )
+
+
+    def alterar_status_usuario(
+        self,
+        usuario_id: int,
+        ativo: bool,
+    ) -> None:
+        with self.connect() as connection:
+            connection.execute(
+                """
+                UPDATE usuarios
+                SET ativo = ?
+                WHERE id = ?
+                """,
+                (
+                    1 if ativo else 0,
+                    usuario_id,
+                ),
+            )
+    
     def abrir_caixa(
         self,
         usuario_id: int,

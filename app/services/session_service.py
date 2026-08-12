@@ -10,8 +10,10 @@ class SessionService:
             "id": int(usuario["id"]),
             "nome": str(usuario["nome"]),
             "usuario": str(usuario["usuario"]),
+            "perfil": str(
+                usuario["perfil"]
+            ).upper(),
         }
-
     def encerrar_sessao(self) -> None:
         self.usuario_atual = None
 

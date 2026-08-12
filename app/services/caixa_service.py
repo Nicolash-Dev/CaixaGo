@@ -338,4 +338,256 @@ class CaixaService:
     ) -> None:
         session_service.encerrar_sessao()
 
+    def listar_usuarios(
+        self,
+    ) -> list:
+        usuario_atual = (
+            session_service.obter_usuario_atual()
+        )
+
+        if usuario_atual is None:
+            raise ValueError(
+                "Nenhum usuário está autenticado."
+            )
+
+        if (
+            str(
+                usuario_atual.get(
+                    "perfil",
+                    ""
+                )
+            ).upper()
+            != "GERENTE"
+        ):
+            raise ValueError(
+                "Apenas gerentes podem "
+                "consultar usuários."
+            )
+
+        return database.listar_usuarios()
+
+
+    def criar_usuario(
+        self,
+        nome: str,
+        usuario: str,
+        pin: str,
+        perfil: str = "OPERADOR",
+    ) -> int:
+        usuario_atual = (
+            session_service.obter_usuario_atual()
+        )
+
+        if usuario_atual is None:
+            raise ValueError(
+                "Nenhum usuário está autenticado."
+            )
+
+        if (
+            str(
+                usuario_atual.get(
+                    "perfil",
+                    ""
+                )
+            ).upper()
+            != "GERENTE"
+        ):
+            raise ValueError(
+                "Apenas gerentes podem "
+                "cadastrar usuários."
+            )
+
+        nome = nome.strip()
+        usuario = usuario.strip().lower()
+        pin = pin.strip()
+        perfil = perfil.strip().upper()
+
+        if not nome:
+            raise ValueError(
+                "Informe o nome do usuário."
+            )
+
+        if not usuario:
+            raise ValueError(
+                "Informe o login do usuário."
+            )
+
+        if len(pin) != 4 or not pin.isdigit():
+            raise ValueError(
+                "O PIN deve possuir "
+                "exatamente 4 números."
+            )
+
+        if perfil not in {
+            "GERENTE",
+            "OPERADOR",
+        }:
+            raise ValueError(
+                "Perfil de usuário inválido."
+            )
+
+        existente = (
+            database.obter_usuario_por_login(
+                usuario
+            )
+        )
+
+        if existente is not None:
+            raise ValueError(
+                "Já existe um usuário "
+                "com esse login."
+            )
+
+        return database.criar_usuario(
+            nome=nome,
+            usuario=usuario,
+            pin_hash=pin,
+            perfil=perfil,
+        )
+
+
+    def atualizar_usuario(
+        self,
+        usuario_id: int,
+        nome: str,
+        usuario: str,
+        perfil: str,
+    ) -> None:
+        usuario_atual = (
+            session_service.obter_usuario_atual()
+        )
+
+        if usuario_atual is None:
+            raise ValueError(
+                "Nenhum usuário está autenticado."
+            )
+
+        if (
+            str(
+                usuario_atual.get(
+                    "perfil",
+                    ""
+                )
+            ).upper()
+            != "GERENTE"
+        ):
+            raise ValueError(
+                "Apenas gerentes podem "
+                "editar usuários."
+            )
+
+        nome = nome.strip()
+        usuario = usuario.strip().lower()
+        perfil = perfil.strip().upper()
+
+        if not nome:
+            raise ValueError(
+                "Informe o nome do usuário."
+            )
+
+        if not usuario:
+            raise ValueError(
+                "Informe o login do usuário."
+            )
+
+        if perfil not in {
+            "GERENTE",
+            "OPERADOR",
+        }:
+            raise ValueError(
+                "Perfil de usuário inválido."
+            )
+
+        database.atualizar_usuario(
+            usuario_id=usuario_id,
+            nome=nome,
+            usuario=usuario,
+            perfil=perfil,
+        )
+
+
+    def atualizar_pin_usuario(
+        self,
+        usuario_id: int,
+        novo_pin: str,
+    ) -> None:
+        usuario_atual = (
+            session_service.obter_usuario_atual()
+        )
+
+        if usuario_atual is None:
+            raise ValueError(
+                "Nenhum usuário está autenticado."
+            )
+
+        if (
+            str(
+                usuario_atual.get(
+                    "perfil",
+                    ""
+                )
+            ).upper()
+            != "GERENTE"
+        ):
+            raise ValueError(
+                "Apenas gerentes podem "
+                "alterar PINs."
+            )
+
+        novo_pin = novo_pin.strip()
+
+        if (
+            len(novo_pin) != 4
+            or not novo_pin.isdigit()
+        ):
+            raise ValueError(
+                "O PIN deve possuir "
+                "exatamente 4 números."
+            )
+
+        database.atualizar_pin_usuario(
+            usuario_id=usuario_id,
+            pin_hash=novo_pin,
+        )
+
+
+    def alterar_status_usuario(
+        self,
+        usuario_id: int,
+        ativo: bool,
+    ) -> None:
+        usuario_atual = (
+            session_service.obter_usuario_atual()
+        )
+
+        if usuario_atual is None:
+            raise ValueError(
+                "Nenhum usuário está autenticado."
+            )
+
+        if (
+            str(
+                usuario_atual.get(
+                    "perfil",
+                    ""
+                )
+            ).upper()
+            != "GERENTE"
+        ):
+            raise ValueError(
+                "Apenas gerentes podem "
+                "ativar ou desativar usuários."
+            )
+
+        if int(usuario_atual["id"]) == usuario_id:
+            raise ValueError(
+                "Você não pode desativar "
+                "o próprio usuário."
+            )
+
+        database.alterar_status_usuario(
+            usuario_id=usuario_id,
+            ativo=ativo,
+        )
+
 caixa_service = CaixaService()

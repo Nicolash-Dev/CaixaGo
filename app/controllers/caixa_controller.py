@@ -114,6 +114,61 @@ class CaixaController:
     ) -> None:
         caixa_service.logout()
 
+    def listar_usuarios(
+        self,
+    ) -> list:
+        return caixa_service.listar_usuarios()
 
+
+    def criar_usuario(
+        self,
+        nome: str,
+        usuario: str,
+        pin: str,
+        perfil: str = "OPERADOR",
+    ) -> int:
+        return caixa_service.criar_usuario(
+            nome=nome,
+            usuario=usuario,
+            pin=pin,
+            perfil=perfil,
+        )
+
+
+    def atualizar_usuario(
+        self,
+        usuario_id: int,
+        nome: str,
+        usuario: str,
+        perfil: str,
+    ) -> None:
+        caixa_service.atualizar_usuario(
+            usuario_id=usuario_id,
+            nome=nome,
+            usuario=usuario,
+            perfil=perfil,
+        )
+
+
+    def atualizar_pin_usuario(
+        self,
+        usuario_id: int,
+        novo_pin: str,
+    ) -> None:
+        caixa_service.atualizar_pin_usuario(
+            usuario_id=usuario_id,
+            novo_pin=novo_pin,
+        )
+
+
+    def alterar_status_usuario(
+        self,
+        usuario_id: int,
+        ativo: bool,
+    ) -> None:
+        caixa_service.alterar_status_usuario(
+            usuario_id=usuario_id,
+            ativo=ativo,
+        )
     
 caixa_controller = CaixaController()

@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QVBoxLayout,
@@ -12,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.controllers.caixa_controller import caixa_controller
+from app.reports.fechamento_pdf import gerar_pdf_fechamento
 
 
 def formatar_moeda(valor: float) -> str:
@@ -98,6 +100,7 @@ class DetalhesCaixaPage(QWidget):
 
         root.setSpacing(20)
 
+        # Cabeçalho
         header = QHBoxLayout()
 
         titulo_container = QVBoxLayout()
@@ -125,6 +128,19 @@ class DetalhesCaixaPage(QWidget):
             self.subtitulo
         )
 
+        pdf_button = QPushButton(
+            "Gerar PDF"
+        )
+        pdf_button.setObjectName(
+            "primaryButton"
+        )
+        pdf_button.setFixedWidth(
+            140
+        )
+        pdf_button.clicked.connect(
+            self.gerar_pdf
+        )
+
         voltar_button = QPushButton(
             "Voltar"
         )
@@ -146,6 +162,10 @@ class DetalhesCaixaPage(QWidget):
         header.addStretch()
 
         header.addWidget(
+            pdf_button
+        )
+
+        header.addWidget(
             voltar_button
         )
 
@@ -153,6 +173,7 @@ class DetalhesCaixaPage(QWidget):
             header
         )
 
+        # Área rolável
         self.scroll = QScrollArea()
 
         self.scroll.setWidgetResizable(
@@ -585,6 +606,47 @@ class DetalhesCaixaPage(QWidget):
         layout.addWidget(
             linha
         )
+
+    def gerar_pdf(self) -> None:
+        if self.caixa_id_atual is None:
+            QMessageBox.warning(
+                self,
+                "PDF",
+                "Nenhum caixa foi selecionado.",
+            )
+            return
+
+        try:
+            detalhes = (
+                caixa_controller
+                .obter_detalhes_caixa(
+                    self.caixa_id_atual
+                )
+            )
+
+            arquivo = gerar_pdf_fechamento(
+                detalhes
+            )
+
+            QMessageBox.information(
+                self,
+                "PDF gerado",
+                (
+                    "Relatório gerado com sucesso!\n\n"
+                    f"Arquivo:\n{arquivo}"
+                ),
+            )
+
+        except Exception as error:
+            QMessageBox.critical(
+                self,
+                "Erro ao gerar PDF",
+                (
+                    "Não foi possível gerar "
+                    "o relatório.\n\n"
+                    f"Erro: {error}"
+                ),
+            )
 
     def voltar(self) -> None:
         if self.on_voltar is not None:

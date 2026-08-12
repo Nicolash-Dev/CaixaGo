@@ -55,10 +55,12 @@ class HistoricoCaixasPage(QWidget):
     def __init__(
         self,
         on_voltar=None,
+        on_abrir_caixa=None,
     ) -> None:
         super().__init__()
 
         self.on_voltar = on_voltar
+        self.on_abrir_caixa = on_abrir_caixa
 
         self.criar_interface()
         self.carregar_historico()
@@ -360,9 +362,35 @@ class HistoricoCaixasPage(QWidget):
             rodape
         )
 
+        detalhes_button = QPushButton(
+            "Ver detalhes"
+        )
+
+        detalhes_button.setObjectName(
+            "ghostButton"
+        )
+
+        detalhes_button.clicked.connect(
+            lambda _=False, caixa_id=int(caixa["id"]):
+                self.abrir_detalhes(caixa_id)
+        )
+
+        layout.addWidget(
+            detalhes_button
+        )
+
         self.lista.addWidget(
             card
         )
+
+    def abrir_detalhes(
+        self,
+        caixa_id: int,
+    ) -> None:
+        if self.on_abrir_caixa is not None:
+            self.on_abrir_caixa(
+                caixa_id
+            )
 
     def voltar(self) -> None:
         if self.on_voltar is not None:

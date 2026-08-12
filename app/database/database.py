@@ -680,4 +680,62 @@ class Database:
             return list(caixas)
 
 
+    def obter_detalhes_caixa(
+        self,
+        caixa_id: int,
+    ) -> dict | None:
+        with self.connect() as connection:
+            caixa = connection.execute(
+                """
+                SELECT
+                    c.id,
+                    c.usuario_id,
+                    c.valor_inicial,
+                    c.observacao,
+                    c.status,
+                    c.aberto_em,
+                    c.fechado_em,
+                    u.nome AS operador
+                FROM caixas c
+                JOIN usuarios u
+                    ON u.id = c.usuario_id
+                WHERE c.id = ?
+                LIMIT 1
+                """,
+                (caixa_id,),
+            ).fetchone()
+
+            if caixa is None:
+                return None
+
+            movimentacoes = connection.execute(
+                """
+                SELECT
+                    id,
+                    tipo,
+                    valor,
+                    descricao,
+                    forma_pagamento,
+                    criado_em
+                FROM movimentacoes
+                WHERE caixa_id = ?
+                ORDER BY id ASC
+                """,
+                (caixa_id,),
+            ).fetchall()
+
+        resumo = self.calcular_resumo_caixa(
+            caixa_id
+        )
+
+        return {
+            "caixa": dict(caixa),
+            "movimentacoes": [
+                dict(movimentacao)
+                for movimentacao in movimentacoes
+            ],
+            "resumo": resumo,
+        }
+
+
 database = Database()

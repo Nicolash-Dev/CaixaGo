@@ -211,5 +211,20 @@ class CaixaService:
             limite=limite
         )
 
+    def obter_detalhes_caixa(
+        self,
+        caixa_id: int,
+    ) -> dict:
+        detalhes = database.obter_detalhes_caixa(
+            caixa_id
+        )
+
+        if detalhes is None:
+            raise ValueError(
+                "Caixa não encontrado."
+            )
+
+        return detalhes
+
 
 caixa_service = CaixaService()

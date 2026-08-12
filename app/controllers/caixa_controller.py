@@ -51,7 +51,7 @@ class CaixaController:
     ):
         return caixa_service.obter_ultimas_movimentacoes(
             limite=limite
-    )
+        )
 
     def listar_caixas_fechados(
         self,
@@ -60,5 +60,14 @@ class CaixaController:
         return caixa_service.listar_caixas_fechados(
             limite=limite
         )
+
+    def obter_detalhes_caixa(
+        self,
+        caixa_id: int,
+    ) -> dict:
+        return caixa_service.obter_detalhes_caixa(
+            caixa_id
+        )
+
 
 caixa_controller = CaixaController()

@@ -227,4 +227,14 @@ QScrollBar::sub-page:vertical {
     background-color: transparent;
 }
 
+#historicoCard {
+    background-color: #0E1A2B;
+    border: 1px solid #1E3A5F;
+    border-radius: 16px;
+}
+
+#historicoCard:hover {
+    border: 1px solid #2563EB;
+}
+
 '''

@@ -109,10 +109,15 @@ class MetricCard(QFrame):
 
 
 class HomePage(QWidget):
-    def __init__(self, on_logout) -> None:
+    def __init__(
+        self,
+        on_logout,
+        on_historico,
+    ) -> None:
         super().__init__()
 
         self.on_logout = on_logout
+        self.on_historico = on_historico
         self.caixa_aberto_em: datetime | None = None
 
         root = QVBoxLayout(self)
@@ -125,12 +130,21 @@ class HomePage(QWidget):
         brand = QLabel("C✓  CaixaGo")
         brand.setObjectName("headerBrand")
 
+        historico_button = QPushButton("Histórico")
+        historico_button.setObjectName("ghostButton")
+        historico_button.clicked.connect(
+            self.on_historico
+        )
+
         logout_button = QPushButton("Sair")
         logout_button.setObjectName("ghostButton")
-        logout_button.clicked.connect(self.on_logout)
+        logout_button.clicked.connect(
+            self.on_logout
+        )
 
         header.addWidget(brand)
         header.addStretch()
+        header.addWidget(historico_button)
         header.addWidget(logout_button)
 
         # Saudação e horário

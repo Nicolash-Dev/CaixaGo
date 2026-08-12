@@ -53,5 +53,12 @@ class CaixaController:
             limite=limite
     )
 
+    def listar_caixas_fechados(
+        self,
+        limite: int = 50,
+    ) -> list:
+        return caixa_service.listar_caixas_fechados(
+            limite=limite
+        )
 
 caixa_controller = CaixaController()

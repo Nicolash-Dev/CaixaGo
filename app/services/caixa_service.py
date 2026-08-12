@@ -17,15 +17,17 @@ class CaixaService:
         observacao: str = "",
     ) -> int:
         if database.obter_caixa_aberto() is not None:
-            raise ValueError("Já existe um caixa aberto.")
+            raise ValueError(
+                "Já existe um caixa aberto."
+            )
 
         if valor_inicial < 0:
             raise ValueError(
-            "O valor inicial não pode ser negativo."
-        )
+                "O valor inicial não pode ser negativo."
+            )
 
         usuario = database.obter_usuario_por_login(
-        "nicolas"
+            "nicolas"
         )
 
         if usuario is None:
@@ -34,10 +36,10 @@ class CaixaService:
             )
 
         return database.abrir_caixa(
-        usuario_id=int(usuario["id"]),
-        valor_inicial=valor_inicial,
-        observacao=observacao.strip(),
-    )
+            usuario_id=int(usuario["id"]),
+            valor_inicial=valor_inicial,
+            observacao=observacao.strip(),
+        )
 
     def registrar_movimentacao(
         self,
@@ -53,9 +55,14 @@ class CaixaService:
                 "Abra o caixa antes de registrar movimentações."
             )
 
-        tipo_normalizado = tipo.strip().upper()
+        tipo_normalizado = (
+            tipo.strip().upper()
+        )
 
-        if tipo_normalizado not in self.TIPOS_PERMITIDOS:
+        if (
+            tipo_normalizado
+            not in self.TIPOS_PERMITIDOS
+        ):
             raise ValueError(
                 "Tipo de movimentação inválido."
             )
@@ -86,7 +93,10 @@ class CaixaService:
                 "CREDITO",
             }
 
-            if forma_normalizada not in formas_permitidas:
+            if (
+                forma_normalizada
+                not in formas_permitidas
+            ):
                 raise ValueError(
                     "Forma de pagamento inválida."
                 )
@@ -123,7 +133,6 @@ class CaixaService:
             limite=limite,
         )
 
-    
     def obter_resumo(self) -> dict:
         caixa = database.obter_caixa_aberto()
 
@@ -132,6 +141,12 @@ class CaixaService:
                 "quantidade": 0,
                 "faturamento": 0.0,
                 "saldo_esperado": 0.0,
+                "vendas_dinheiro": 0.0,
+                "vendas_pix": 0.0,
+                "vendas_debito": 0.0,
+                "vendas_credito": 0.0,
+                "suprimentos": 0.0,
+                "sangrias": 0.0,
             }
 
         return database.calcular_resumo_caixa(
@@ -159,10 +174,18 @@ class CaixaService:
             int(caixa["id"])
         )
 
-        esperado = float(resumo["saldo_esperado"])
-        diferenca = valor_contado - esperado
+        esperado = float(
+            resumo["saldo_esperado"]
+        )
 
-        if abs(diferenca) >= 0.01 and not justificativa.strip():
+        diferenca = (
+            valor_contado - esperado
+        )
+
+        if (
+            abs(diferenca) >= 0.01
+            and not justificativa.strip()
+        ):
             raise ValueError(
                 "Informe uma justificativa para a diferença."
             )
@@ -179,6 +202,14 @@ class CaixaService:
             "contado": valor_contado,
             "diferenca": diferenca,
         }
+
+    def listar_caixas_fechados(
+        self,
+        limite: int = 50,
+    ) -> list:
+        return database.listar_caixas_fechados(
+            limite=limite
+        )
 
 
 caixa_service = CaixaService()

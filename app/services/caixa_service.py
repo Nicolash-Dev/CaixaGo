@@ -1,5 +1,6 @@
 from app.database.database import database
 from app.services.session_service import session_service
+from app.services.pin_service import pin_service
 
 
 class CaixaService:
@@ -315,10 +316,38 @@ class CaixaService:
                 "Usuário não encontrado ou inativo."
             )
 
-        if str(registro["pin_hash"]) != pin:
-            raise ValueError(
-                "PIN incorreto."
+        pin_salvo = str(
+            registro["pin_hash"]
+        )
+
+        # Migração automática:
+        # se ainda estiver em texto puro, valida uma vez
+        # e já converte para hash.
+        if not pin_service.eh_hash(
+            pin_salvo
+        ):
+            if pin_salvo != pin:
+                raise ValueError(
+                    "PIN incorreto."
+                )
+
+            novo_hash = pin_service.gerar_hash(
+                pin
             )
+
+            database.atualizar_pin_usuario(
+                usuario_id=int(registro["id"]),
+                pin_hash=novo_hash,
+            )
+
+        else:
+            if not pin_service.verificar_pin(
+                pin,
+                pin_salvo,
+            ):
+                raise ValueError(
+                    "PIN incorreto."
+                )
 
         session_service.iniciar_sessao(
             registro
@@ -438,10 +467,14 @@ class CaixaService:
                 "com esse login."
             )
 
+        pin_hash = pin_service.gerar_hash(
+            pin
+        )
+
         return database.criar_usuario(
             nome=nome,
             usuario=usuario,
-            pin_hash=pin,
+            pin_hash=pin_hash,
             perfil=perfil,
         )
 
@@ -545,9 +578,13 @@ class CaixaService:
                 "exatamente 4 números."
             )
 
+        novo_hash = pin_service.gerar_hash(
+            novo_pin
+        )
+
         database.atualizar_pin_usuario(
             usuario_id=usuario_id,
-            pin_hash=novo_pin,
+            pin_hash=novo_hash,
         )
 
 

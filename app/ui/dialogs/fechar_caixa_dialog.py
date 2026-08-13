@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 from app.controllers.caixa_controller import caixa_controller
 from app.reports.fechamento_pdf import gerar_pdf_fechamento
 from app.services.email_service import email_service
+from app.services.backup_service import backup_service
 
 
 def formatar_moeda(valor: float) -> str:
@@ -589,6 +590,8 @@ class FecharCaixaDialog(QDialog):
             erro_pdf = None
             email_enviado = False
             erro_email = None
+            caminho_backup = None
+            erro_backup = None
 
             try:
                 detalhes = (
@@ -655,6 +658,12 @@ class FecharCaixaDialog(QDialog):
                 except Exception as error:
                     erro_email = str(error)
 
+            try:
+                caminho_backup = backup_service.criar_backup()
+
+            except Exception as error:
+                erro_backup = str(error)
+
             mensagem = (
                 "Caixa fechado com sucesso.\n\n"
                 f"Faturamento total: "
@@ -699,6 +708,19 @@ class FecharCaixaDialog(QDialog):
                     "\n\nO caixa e o PDF foram salvos normalmente,"
                     "\nmas não foi possível enviar o e-mail."
                     f"\n\nDetalhes: {erro_email}"
+                )
+
+            if caminho_backup is not None:
+                mensagem += (
+                    "\n\nBackup automático criado com sucesso."
+                    f"\n\nArquivo:\n{caminho_backup}"
+                )
+
+            elif erro_backup:
+                mensagem += (
+                    "\n\nO fechamento foi concluído normalmente,"
+                    "\nmas não foi possível criar o backup."
+                    f"\n\nDetalhes: {erro_backup}"
                 )
 
             QMessageBox.information(

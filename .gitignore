@@ -1,21 +1,27 @@
+# Cache Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
+# Ambiente virtual
 .venv/
 venv/
 
+# IDE
 .vscode/
 .idea/
 
-# Credenciais e variáveis de ambiente
+# Credenciais
 .env
 .env.*
 !.env.example
 
 # Banco de dados local
 data/*.db
+
+# Backups locais
+backups/*.db
 
 # Relatórios gerados
 relatorios/*.pdf

@@ -91,5 +91,46 @@ class BackupService:
             except OSError:
                 pass
 
+    def restaurar_backup(
+        self,
+        caminho_backup: str | Path,
+    ) -> None:
+        caminho_backup = Path(
+            caminho_backup
+        )
+
+        if not caminho_backup.exists():
+            raise FileNotFoundError(
+                "O arquivo de backup não foi encontrado."
+            )
+
+        if caminho_backup.suffix.lower() != ".db":
+            raise ValueError(
+                "O arquivo selecionado não é um backup válido."
+            )
+
+        banco_destino = (
+            database.database_path
+        )
+
+        # Cria uma cópia de segurança do estado atual
+        # antes de substituir o banco.
+        self.criar_backup()
+
+        shutil.copy2(
+            caminho_backup,
+            banco_destino,
+        )
+
+
+    def obter_backup_mais_recente(
+        self,
+    ) -> Path | None:
+        backups = self.listar_backups()
+
+        if not backups:
+            return None
+
+        return backups[0]
 
 backup_service = BackupService()

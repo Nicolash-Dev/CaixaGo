@@ -1,6 +1,8 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QApplication,
     QCheckBox,
+    QFileDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -12,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.controllers.caixa_controller import caixa_controller
+from app.services.backup_service import backup_service
 
 
 class ConfiguracoesPage(QWidget):
@@ -50,8 +53,8 @@ class ConfiguracoesPage(QWidget):
         )
 
         subtitulo = QLabel(
-            "Configure os dados do estabelecimento "
-            "e o envio dos relatórios."
+            "Configure os dados do estabelecimento, "
+            "relatórios e segurança dos dados."
         )
         subtitulo.setObjectName(
             "secondaryText"
@@ -95,7 +98,9 @@ class ConfiguracoesPage(QWidget):
             header
         )
 
-        # Card principal
+        # ==================================================
+        # Card do estabelecimento
+        # ==================================================
         card = QFrame()
 
         card.setObjectName(
@@ -138,7 +143,6 @@ class ConfiguracoesPage(QWidget):
             True
         )
 
-        # Nome
         nome_label = QLabel(
             "Nome do estabelecimento"
         )
@@ -149,7 +153,6 @@ class ConfiguracoesPage(QWidget):
             "Exemplo: Mercadinho Central"
         )
 
-        # Responsável
         responsavel_label = QLabel(
             "Responsável"
         )
@@ -160,7 +163,6 @@ class ConfiguracoesPage(QWidget):
             "Exemplo: João da Silva"
         )
 
-        # Email
         email_label = QLabel(
             "E-mail para relatórios"
         )
@@ -171,7 +173,6 @@ class ConfiguracoesPage(QWidget):
             "Exemplo: gerente@empresa.com"
         )
 
-        # Envio automático
         self.enviar_relatorio_check = QCheckBox(
             "Enviar relatório automaticamente "
             "ao fechar o caixa"
@@ -181,7 +182,6 @@ class ConfiguracoesPage(QWidget):
             Qt.PointingHandCursor
         )
 
-        # Botão salvar
         salvar_button = QPushButton(
             "Salvar configurações"
         )
@@ -248,6 +248,105 @@ class ConfiguracoesPage(QWidget):
 
         root.addWidget(
             card
+        )
+
+        # ==================================================
+        # Card de backup e restauração
+        # ==================================================
+        backup_card = QFrame()
+
+        backup_card.setObjectName(
+            "historicoCard"
+        )
+
+        backup_layout = QVBoxLayout(
+            backup_card
+        )
+
+        backup_layout.setContentsMargins(
+            28,
+            24,
+            28,
+            24,
+        )
+
+        backup_layout.setSpacing(
+            14
+        )
+
+        backup_titulo = QLabel(
+            "Backup e recuperação"
+        )
+
+        backup_titulo.setObjectName(
+            "sectionTitle"
+        )
+
+        backup_descricao = QLabel(
+            "O CaixaGo cria backups automáticos após "
+            "o fechamento do caixa. Você também pode "
+            "restaurar uma cópia anterior do banco de dados."
+        )
+
+        backup_descricao.setObjectName(
+            "secondaryText"
+        )
+
+        backup_descricao.setWordWrap(
+            True
+        )
+
+        aviso = QLabel(
+            "A restauração substitui os dados atuais pelo "
+            "conteúdo do backup selecionado. Antes disso, "
+            "o CaixaGo cria uma cópia de segurança do estado atual."
+        )
+
+        aviso.setWordWrap(
+            True
+        )
+
+        aviso.setStyleSheet(
+            """
+            color: #FBBF24;
+            background-color: transparent;
+            """
+        )
+
+        restaurar_button = QPushButton(
+            "Restaurar backup"
+        )
+
+        restaurar_button.setObjectName(
+            "ghostButton"
+        )
+
+        restaurar_button.clicked.connect(
+            self.restaurar_backup
+        )
+
+        backup_layout.addWidget(
+            backup_titulo
+        )
+
+        backup_layout.addWidget(
+            backup_descricao
+        )
+
+        backup_layout.addWidget(
+            aviso
+        )
+
+        backup_layout.addSpacing(
+            6
+        )
+
+        backup_layout.addWidget(
+            restaurar_button
+        )
+
+        root.addWidget(
+            backup_card
         )
 
         root.addStretch()
@@ -333,6 +432,96 @@ class ConfiguracoesPage(QWidget):
                 "Erro",
                 (
                     "Ocorreu um problema inesperado.\n\n"
+                    f"{error}"
+                ),
+            )
+
+    def restaurar_backup(self) -> None:
+        caixa = caixa_controller.obter_caixa_aberto()
+
+        if caixa is not None:
+            QMessageBox.warning(
+                self,
+                "Restauração bloqueada",
+                (
+                    "Não é possível restaurar um backup "
+                    "enquanto existe um caixa aberto.\n\n"
+                    "Feche o caixa atual antes de continuar."
+                ),
+            )
+            return
+
+        caminho, _ = QFileDialog.getOpenFileName(
+            self,
+            "Selecionar backup do CaixaGo",
+            str(
+                backup_service.backup_directory
+            ),
+            "Banco de dados (*.db)",
+        )
+
+        if not caminho:
+            return
+
+        primeira_confirmacao = QMessageBox.warning(
+            self,
+            "Confirmar restauração",
+            (
+                "A restauração substituirá os dados atuais "
+                "pelos dados do backup selecionado.\n\n"
+                "Antes da substituição, o CaixaGo criará "
+                "automaticamente um backup do estado atual.\n\n"
+                "Deseja continuar?"
+            ),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+
+        if primeira_confirmacao != QMessageBox.Yes:
+            return
+
+        segunda_confirmacao = QMessageBox.question(
+            self,
+            "Confirmação final",
+            (
+                "Esta é a última confirmação.\n\n"
+                "Após restaurar o banco de dados, "
+                "o CaixaGo será encerrado e deverá "
+                "ser aberto novamente.\n\n"
+                "Restaurar agora?"
+            ),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+
+        if segunda_confirmacao != QMessageBox.Yes:
+            return
+
+        try:
+            backup_service.restaurar_backup(
+                caminho
+            )
+
+            QMessageBox.information(
+                self,
+                "Backup restaurado",
+                (
+                    "Backup restaurado com sucesso.\n\n"
+                    "O CaixaGo será encerrado agora.\n"
+                    "Abra o programa novamente para "
+                    "carregar os dados restaurados."
+                ),
+            )
+
+            QApplication.quit()
+
+        except Exception as error:
+            QMessageBox.critical(
+                self,
+                "Falha na restauração",
+                (
+                    "Não foi possível restaurar "
+                    "o backup.\n\n"
                     f"{error}"
                 ),
             )

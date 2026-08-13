@@ -5,25 +5,15 @@ from datetime import datetime
 from pathlib import Path
 
 from app.database.database import database
+from app.utils.paths import obter_diretorio_backups
 
 
 class BackupService:
     LIMITE_BACKUPS = 30
 
     def __init__(self) -> None:
-        project_root = (
-            Path(__file__)
-            .resolve()
-            .parents[2]
-        )
-
         self.backup_directory = (
-            project_root / "backups"
-        )
-
-        self.backup_directory.mkdir(
-            parents=True,
-            exist_ok=True,
+            obter_diretorio_backups()
         )
 
     def criar_backup(self) -> Path:
@@ -88,6 +78,7 @@ class BackupService:
         ]:
             try:
                 backup.unlink()
+
             except OSError:
                 pass
 
@@ -101,20 +92,25 @@ class BackupService:
 
         if not caminho_backup.exists():
             raise FileNotFoundError(
-                "O arquivo de backup não foi encontrado."
+                "O arquivo de backup "
+                "não foi encontrado."
             )
 
-        if caminho_backup.suffix.lower() != ".db":
+        if (
+            caminho_backup.suffix.lower()
+            != ".db"
+        ):
             raise ValueError(
-                "O arquivo selecionado não é um backup válido."
+                "O arquivo selecionado "
+                "não é um backup válido."
             )
 
         banco_destino = (
             database.database_path
         )
 
-        # Cria uma cópia de segurança do estado atual
-        # antes de substituir o banco.
+        # Antes de restaurar, salva o estado
+        # atual para permitir recuperação.
         self.criar_backup()
 
         shutil.copy2(
@@ -122,15 +118,17 @@ class BackupService:
             banco_destino,
         )
 
-
     def obter_backup_mais_recente(
         self,
     ) -> Path | None:
-        backups = self.listar_backups()
+        backups = (
+            self.listar_backups()
+        )
 
         if not backups:
             return None
 
         return backups[0]
+
 
 backup_service = BackupService()

@@ -2,23 +2,13 @@ from __future__ import annotations
 
 import sqlite3
 from contextlib import contextmanager
-from pathlib import Path
 from typing import Iterator
+from app.utils.paths import obter_caminho_banco
 
 
 class Database:
     def __init__(self) -> None:
-        project_root = Path(__file__).resolve().parents[2]
-
-        data_directory = project_root / "data"
-        data_directory.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-
-        self.database_path = (
-            data_directory / "caixago.db"
-        )
+        self.database_path = obter_caminho_banco()
 
     @contextmanager
     def connect(

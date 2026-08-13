@@ -15,6 +15,8 @@ from reportlab.platypus import (
 )
 
 
+from app.utils.paths import obter_diretorio_relatorios
+
 def formatar_moeda(valor: float) -> str:
     texto = f"{valor:,.2f}"
     texto = (
@@ -83,12 +85,8 @@ def gerar_pdf_fechamento(
     resumo = detalhes["resumo"]
     movimentacoes = detalhes["movimentacoes"]
 
-    project_root = Path(__file__).resolve().parents[2]
-
-    reports_dir = project_root / "relatorios"
-    reports_dir.mkdir(
-        parents=True,
-        exist_ok=True,
+    reports_dir = (
+        obter_diretorio_relatorios()
     )
 
     caixa_id = int(

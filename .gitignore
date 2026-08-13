@@ -1,8 +1,13 @@
-# Cache Python
+# ==========================================
+# CaixaGo - Git Ignore
+# ==========================================
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py[cod]
 
 # Ambiente virtual
 .venv/
@@ -12,7 +17,7 @@ venv/
 .vscode/
 .idea/
 
-# Credenciais
+# Credenciais e configurações privadas
 .env
 .env.*
 !.env.example
@@ -25,3 +30,16 @@ backups/*.db
 
 # Relatórios gerados
 relatorios/*.pdf
+
+# PyInstaller
+build/
+dist/
+
+# Arquivos temporários
+*.log
+*.tmp
+*.temp
+
+# Sistema operacional
+Thumbs.db
+.DS_Store

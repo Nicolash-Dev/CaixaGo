@@ -9,12 +9,15 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
 
 from app.controllers.caixa_controller import caixa_controller
 from app.services.backup_service import backup_service
+from app.services.credential_service import credential_service
+from app.services.email_service import email_service
 
 
 class ConfiguracoesPage(QWidget):
@@ -30,73 +33,53 @@ class ConfiguracoesPage(QWidget):
 
     def criar_interface(self) -> None:
         root = QVBoxLayout(self)
+        root.setContentsMargins(34, 24, 34, 24)
+        root.setSpacing(14)
 
-        root.setContentsMargins(
-            42,
-            32,
-            42,
-            32,
-        )
-
-        root.setSpacing(20)
-
-        # Cabeçalho
+        # Cabeçalho fixo
         header = QHBoxLayout()
+        header.setSpacing(16)
 
         titulo_container = QVBoxLayout()
+        titulo_container.setSpacing(4)
 
-        titulo = QLabel(
-            "Configurações"
-        )
-        titulo.setObjectName(
-            "pageTitle"
-        )
+        titulo = QLabel("Configurações")
+        titulo.setObjectName("pageTitle")
 
         subtitulo = QLabel(
             "Configure os dados do estabelecimento, "
             "relatórios e segurança dos dados."
         )
-        subtitulo.setObjectName(
-            "secondaryText"
-        )
+        subtitulo.setObjectName("secondaryText")
 
-        titulo_container.addWidget(
-            titulo
-        )
+        titulo_container.addWidget(titulo)
+        titulo_container.addWidget(subtitulo)
 
-        titulo_container.addWidget(
-            subtitulo
-        )
+        voltar_button = QPushButton("Voltar")
+        voltar_button.setObjectName("ghostButton")
+        voltar_button.setFixedWidth(120)
+        voltar_button.clicked.connect(self.voltar)
 
-        voltar_button = QPushButton(
-            "Voltar"
-        )
-
-        voltar_button.setObjectName(
-            "ghostButton"
-        )
-
-        voltar_button.setFixedWidth(
-            120
-        )
-
-        voltar_button.clicked.connect(
-            self.voltar
-        )
-
-        header.addLayout(
-            titulo_container
-        )
-
+        header.addLayout(titulo_container)
         header.addStretch()
+        header.addWidget(voltar_button)
 
-        header.addWidget(
-            voltar_button
-        )
+        root.addLayout(header)
 
-        root.addLayout(
-            header
+        # Área rolável
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarAlwaysOff
         )
+        scroll.setFrameShape(QFrame.NoFrame)
+
+        content = QWidget()
+        content.setObjectName("configScrollContent")
+
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 4, 10, 8)
+        content_layout.setSpacing(14)
 
         # ==================================================
         # Card do estabelecimento
@@ -111,16 +94,9 @@ class ConfiguracoesPage(QWidget):
             card
         )
 
-        card_layout.setContentsMargins(
-            28,
-            24,
-            28,
-            24,
-        )
+        card_layout.setContentsMargins(24, 18, 24, 18)
 
-        card_layout.setSpacing(
-            16
-        )
+        card_layout.setSpacing(11)
 
         titulo_estabelecimento = QLabel(
             "Estabelecimento"
@@ -246,9 +222,80 @@ class ConfiguracoesPage(QWidget):
             salvar_button
         )
 
-        root.addWidget(
-            card
+        content_layout.addWidget(card)
+
+        # ==================================================
+        # Card de e-mail seguro
+        # ==================================================
+        email_card = QFrame()
+        email_card.setObjectName("historicoCard")
+
+        email_layout = QVBoxLayout(email_card)
+        email_layout.setContentsMargins(24, 18, 24, 18)
+        email_layout.setSpacing(10)
+
+        email_titulo = QLabel("E-mail do CaixaGo")
+        email_titulo.setObjectName("sectionTitle")
+
+        email_descricao = QLabel(
+            "Configure a conta usada para enviar relatórios. "
+            "A senha é armazenada pelo gerenciador de credenciais "
+            "do sistema e não é gravada no banco de dados."
         )
+        email_descricao.setObjectName("secondaryText")
+        email_descricao.setWordWrap(True)
+
+        smtp_usuario_label = QLabel("Usuário SMTP")
+        self.smtp_usuario_input = QLineEdit()
+        self.smtp_usuario_input.setPlaceholderText(
+            "Exemplo: caixago.empresa@gmail.com"
+        )
+
+        smtp_senha_label = QLabel("Senha de app")
+        self.smtp_senha_input = QLineEdit()
+        self.smtp_senha_input.setEchoMode(QLineEdit.Password)
+        self.smtp_senha_input.setPlaceholderText(
+            "Digite para salvar ou substituir a credencial"
+        )
+
+        self.smtp_status_label = QLabel(
+            "Nenhuma credencial segura carregada."
+        )
+        self.smtp_status_label.setObjectName("secondaryText")
+
+        email_botoes = QHBoxLayout()
+
+        salvar_credencial_button = QPushButton(
+            "Salvar credencial"
+        )
+        salvar_credencial_button.setObjectName("primaryButton")
+        salvar_credencial_button.clicked.connect(
+            self.salvar_credencial_email
+        )
+
+        testar_email_button = QPushButton(
+            "Enviar e-mail de teste"
+        )
+        testar_email_button.setObjectName("ghostButton")
+        testar_email_button.clicked.connect(
+            self.enviar_email_teste
+        )
+
+        email_botoes.addWidget(salvar_credencial_button)
+        email_botoes.addWidget(testar_email_button)
+
+        email_layout.addWidget(email_titulo)
+        email_layout.addWidget(email_descricao)
+        email_layout.addSpacing(6)
+        email_layout.addWidget(smtp_usuario_label)
+        email_layout.addWidget(self.smtp_usuario_input)
+        email_layout.addWidget(smtp_senha_label)
+        email_layout.addWidget(self.smtp_senha_input)
+        email_layout.addWidget(self.smtp_status_label)
+        email_layout.addSpacing(6)
+        email_layout.addLayout(email_botoes)
+
+        content_layout.addWidget(email_card)
 
         # ==================================================
         # Card de backup e restauração
@@ -263,16 +310,9 @@ class ConfiguracoesPage(QWidget):
             backup_card
         )
 
-        backup_layout.setContentsMargins(
-            28,
-            24,
-            28,
-            24,
-        )
+        backup_layout.setContentsMargins(24, 18, 24, 18)
 
-        backup_layout.setSpacing(
-            14
-        )
+        backup_layout.setSpacing(10)
 
         backup_titulo = QLabel(
             "Backup e recuperação"
@@ -345,11 +385,13 @@ class ConfiguracoesPage(QWidget):
             restaurar_button
         )
 
-        root.addWidget(
-            backup_card
-        )
+        content_layout.addWidget(backup_card)
 
-        root.addStretch()
+        content_layout.addStretch()
+
+        scroll.setWidget(content)
+        root.addWidget(scroll)
+        self.scroll_area = scroll
 
     def carregar_configuracoes(
         self,
@@ -389,6 +431,43 @@ class ConfiguracoesPage(QWidget):
                     )
                 )
             )
+
+            resumo_email = email_service.obter_resumo_configuracao()
+            usuario_smtp = resumo_email.get("usuario", "")
+            self.smtp_usuario_input.setText(usuario_smtp)
+
+            senha_segura = (
+                credential_service.obter_senha_smtp(usuario_smtp)
+                if usuario_smtp
+                else None
+            )
+
+            if senha_segura:
+                email_service.configurar(
+                    usuario=usuario_smtp,
+                    senha=senha_segura,
+                    remetente=(
+                        resumo_email.get("remetente", "")
+                        or usuario_smtp
+                    ),
+                    host=resumo_email.get(
+                        "host",
+                        "smtp.gmail.com",
+                    ),
+                    porta=int(resumo_email.get("porta", 587)),
+                    usar_tls=bool(
+                        resumo_email.get("usar_tls", True)
+                    ),
+                )
+                self.smtp_status_label.setText(
+                    "Credencial segura carregada."
+                )
+            else:
+                self.smtp_status_label.setText(
+                    "Informe o usuário e a senha de app."
+                )
+
+            self.smtp_senha_input.clear()
 
         except Exception as error:
             QMessageBox.critical(
@@ -434,6 +513,102 @@ class ConfiguracoesPage(QWidget):
                     "Ocorreu um problema inesperado.\n\n"
                     f"{error}"
                 ),
+            )
+
+    def salvar_credencial_email(self) -> None:
+        try:
+            usuario = self.smtp_usuario_input.text().strip()
+            senha = self.smtp_senha_input.text().strip()
+
+            if not usuario:
+                raise ValueError("Informe o usuário SMTP.")
+
+            if not senha:
+                raise ValueError("Informe a senha de app.")
+
+            credential_service.salvar_senha_smtp(
+                usuario=usuario,
+                senha=senha,
+            )
+
+            email_service.configurar(
+                usuario=usuario,
+                senha=senha,
+                remetente=usuario,
+            )
+
+            self.smtp_senha_input.clear()
+            self.smtp_status_label.setText(
+                "Credencial salva com segurança."
+            )
+
+            QMessageBox.information(
+                self,
+                "E-mail",
+                "Credencial de e-mail salva com sucesso.",
+            )
+
+        except Exception as error:
+            QMessageBox.warning(
+                self,
+                "Não foi possível salvar",
+                str(error),
+            )
+
+    def enviar_email_teste(self) -> None:
+        try:
+            usuario = self.smtp_usuario_input.text().strip()
+
+            if not usuario:
+                raise ValueError("Informe o usuário SMTP.")
+
+            senha = credential_service.obter_senha_smtp(
+                usuario
+            )
+
+            if not senha:
+                raise ValueError(
+                    "Salve a credencial antes de testar."
+                )
+
+            email_service.configurar(
+                usuario=usuario,
+                senha=senha,
+                remetente=usuario,
+            )
+
+            destinatario = self.email_input.text().strip()
+
+            if not destinatario:
+                raise ValueError(
+                    "Informe o e-mail para relatórios "
+                    "na seção Estabelecimento."
+                )
+
+            estabelecimento = (
+                self.nome_input.text().strip()
+                or "CaixaGo"
+            )
+
+            email_service.enviar_email_teste(
+                destinatario=destinatario,
+                estabelecimento=estabelecimento,
+            )
+
+            QMessageBox.information(
+                self,
+                "E-mail",
+                (
+                    "E-mail de teste enviado com sucesso "
+                    f"para {destinatario}."
+                ),
+            )
+
+        except Exception as error:
+            QMessageBox.warning(
+                self,
+                "Falha no teste de e-mail",
+                str(error),
             )
 
     def restaurar_backup(self) -> None:

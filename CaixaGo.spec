@@ -1,12 +1,31 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import (
+    collect_submodules,
+    copy_metadata,
+)
+
+
+keyring_hiddenimports = collect_submodules(
+    "keyring.backends"
+)
+
+keyring_datas = copy_metadata(
+    "keyring"
+)
+
 
 a = Analysis(
-    ['main.py'],
+    ["main.py"],
     pathex=[],
     binaries=[],
-    datas=[('app/assets', 'app/assets')],
-    hiddenimports=[],
+    datas=[
+        ("app/assets", "app/assets"),
+        *keyring_datas,
+    ],
+    hiddenimports=[
+        *keyring_hiddenimports,
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -14,14 +33,21 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
-pyz = PYZ(a.pure)
+
+
+pyz = PYZ(
+    a.pure
+)
+
 
 exe = EXE(
     pyz,
     a.scripts,
     [],
     exclude_binaries=True,
-    name='CaixaGo',
+    name="CaixaGo",
+    icon="app/assets/icons/caixago.ico",
+    version="version_info.txt",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -33,6 +59,9 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
+
+
+
 coll = COLLECT(
     exe,
     a.binaries,
@@ -40,5 +69,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='CaixaGo',
+    name="CaixaGo",
 )
